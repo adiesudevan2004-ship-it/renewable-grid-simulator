@@ -1,0 +1,8 @@
+Forecast horizon: 3h ahead
+Train rows: 6871   Test rows: 1718  (chronological 80/20 split)
+
+Model                   MAE (MW)   RMSE (MW)
+RandomForest                1.16        1.56
+Naive (t-24+H)              3.16        4.69
+
+Model improvement over naive baseline: 63.2% lower MAE, 66.8% lower RMSE
