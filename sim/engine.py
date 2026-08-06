@@ -97,12 +97,35 @@ class SimResult:
     fossil_offpeak_mwh: float
 
 
+_series_cache = None
+
+
 def load_series():
-    """FR-SE-1 input: the Phase 1 synthetic year."""
-    demand = pd.read_csv(DATA_DIR / "demand.csv", index_col="timestamp", parse_dates=True)["demand_mw"]
-    solar_cf = pd.read_csv(DATA_DIR / "solar.csv", index_col="timestamp", parse_dates=True)["solar_cf"]
-    wind_cf = pd.read_csv(DATA_DIR / "wind.csv", index_col="timestamp", parse_dates=True)["wind_cf"]
-    return demand, solar_cf, wind_cf
+    """FR-SE-1 input: the Phase 1 synthetic year. Cached per-process for the same
+    performance reason as load_model_bundle() below — re-parsing three 8,760-row CSVs on
+    every slider tweak is unnecessary work the dashboard doesn't need to pay for."""
+    global _series_cache
+    if _series_cache is None:
+        demand = pd.read_csv(DATA_DIR / "demand.csv", index_col="timestamp", parse_dates=True)["demand_mw"]
+        solar_cf = pd.read_csv(DATA_DIR / "solar.csv", index_col="timestamp", parse_dates=True)["solar_cf"]
+        wind_cf = pd.read_csv(DATA_DIR / "wind.csv", index_col="timestamp", parse_dates=True)["wind_cf"]
+        _series_cache = (demand, solar_cf, wind_cf)
+    return _series_cache
+
+
+_model_bundle_cache = None  # NFR-Performance: forecast_model.pkl is ~45MB; joblib.load() alone
+                             # takes ~5s, which alone blows the dashboard's <=2s slider-response
+                             # budget. Loading it once per process and reusing it (rather than
+                             # reloading on every run_simulation() call) is what makes the live
+                             # dashboard actually responsive — found by direct profiling, not a
+                             # guess (see DECISIONS.md).
+
+
+def load_model_bundle():
+    global _model_bundle_cache
+    if _model_bundle_cache is None:
+        _model_bundle_cache = joblib.load(MODEL_DIR / "forecast_model.pkl")
+    return _model_bundle_cache
 
 
 def _forecast_series(demand: pd.Series, bundle: dict):
@@ -141,7 +164,7 @@ def run_simulation(
 
     predicted_future = None
     if mode == "forecast_driven":
-        bundle = joblib.load(MODEL_DIR / "forecast_model.pkl")
+        bundle = load_model_bundle()
         predicted_future, _horizon = _forecast_series(demand, bundle)
 
     n = len(demand)
