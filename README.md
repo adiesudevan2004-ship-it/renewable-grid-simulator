@@ -38,4 +38,19 @@ pip install -r requirements.txt
 
 ## Status
 
-Phase 0 — scaffold. See the SRS for the full phased plan and requirement list.
+Phases 0-4 done and verified end-to-end (data generation, forecasting model, simulation
+engine, dashboard). See [DECISIONS.md](DECISIONS.md) for the non-obvious design calls made
+along the way — in particular, why Forecast-Driven mode's advantage shows up in cost/CO₂
+rather than raw renewable %, and the honest AI-vs-naive-forecast ablation result.
+
+Remaining: Phase 5 polish (visual pass, full demo rehearsal, report/slides). Reliability
+already stress-tested — 14/14 boundary capacity combinations (all-zero, all-max, zero
+battery, etc.) run cleanly with no crashes or NaN output.
+
+To run:
+```bash
+python data_gen.py        # regenerate synthetic data (only needed once, or after changing data_gen.py)
+python train_model.py     # retrain the forecasting model (only needed once, or after changing it)
+python test_engine.py     # regression check: forecast-driven genuinely beats reactive
+streamlit run app.py      # launch the dashboard
+```
