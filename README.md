@@ -38,14 +38,16 @@ pip install -r requirements.txt
 
 ## Status
 
-Phases 0-4 done and verified end-to-end (data generation, forecasting model, simulation
-engine, dashboard). See [DECISIONS.md](DECISIONS.md) for the non-obvious design calls made
-along the way — in particular, why Forecast-Driven mode's advantage shows up in cost/CO₂
-rather than raw renewable %, and the honest AI-vs-naive-forecast ablation result.
+All 6 phases done and verified end-to-end (data generation, forecasting model, simulation
+engine, dashboard, polish). See [DECISIONS.md](DECISIONS.md) for the non-obvious design
+calls made along the way — in particular, why Forecast-Driven mode's advantage shows up in
+cost/CO₂ rather than raw renewable %, the honest AI-vs-naive-forecast ablation result, and
+the microgrid-scale rescale. See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for a rehearsed live-demo
+walkthrough with anticipated Q&A.
 
-Remaining: Phase 5 polish (visual pass, full demo rehearsal, report/slides). Reliability
-already stress-tested — 14/14 boundary capacity combinations (all-zero, all-max, zero
-battery, etc.) run cleanly with no crashes or NaN output.
+Reliability stress-tested — 26/26 boundary capacity combinations across two scales (all-zero,
+all-max, zero battery, etc.) run cleanly with no crashes or NaN output. Remaining: final
+report/slides for submission (not part of this codebase).
 
 To run:
 ```bash
