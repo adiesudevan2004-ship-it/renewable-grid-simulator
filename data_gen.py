@@ -21,7 +21,10 @@ SEED = 42
 YEAR = 2025  # arbitrary non-leap reference year -> 365 days * 24h = 8,760 hourly records
 DATA_DIR = Path(__file__).parent / "data"
 
-MEAN_DEMAND_MW = 60.0  # nominal microgrid scale — tune to taste, doesn't need to match a real grid
+MEAN_DEMAND_MW = 5.0  # genuine microgrid scale (large campus / small community, peak ~9MW) —
+                       # an earlier version used 60 MW, which is small-city scale, not a
+                       # microgrid; that made the dashboard's cost/CO2 figures balloon into the
+                       # billions and would have undercut the pitch's own "microgrid" framing.
 
 
 def _time_index():

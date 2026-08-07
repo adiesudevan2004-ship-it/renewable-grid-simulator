@@ -69,6 +69,34 @@ clear, demo-visible effect (~1.8% cost improvement, ~7% peak-hour fossil reducti
 being so aggressive it reads as an arbitrarily rigged knob. See `sim/engine.py`'s comments
 for the exact meaning of each.
 
+## Grid scale rescale — 60MW to 5MW (Phase 5 polish)
+
+The first four phases were built and verified against `MEAN_DEMAND_MW = 60` (peak ~108 MW).
+That's small-city/regional-grid scale, not a microgrid — and it made the dashboard's cost
+figures balloon into the billions of Rupees, which would have visibly contradicted the
+pitch's own "simulated microgrid" framing the moment a guide looked at the numbers.
+
+Rescaled to `MEAN_DEMAND_MW = 5` (peak ~9 MW) — genuine large-campus/small-community
+microgrid territory — and regenerated data (Phase 1) + retrained the model (Phase 2) at the
+new scale (model accuracy improvement over naive baseline: unchanged at 63%, as expected —
+a linear rescale of demand doesn't change the *relative* pattern the model has to learn).
+Capacity defaults in `sim/engine.py` were rescaled proportionally (same solar/wind/battery-
+to-demand ratios as the 60MW version). Re-ran `test_engine.py` after rescaling — same
+relative effect size (+1.9% cost, -8.2% peak-hour fossil), confirming the tuned
+`HOLD_BACK_FRACTION`/`PEAK_AHEAD_THRESHOLD` constants transfer across scale.
+
+**Sanity-checked the resulting absolute number isn't just "smaller but still fake":**
+₹18,000/MWh (₹18/kWh) for fossil backup is actually a *conservative* estimate for
+continuous diesel-genset fuel cost alone at MW scale (real-world large gensets run
+~0.25–0.3 L/kWh, and diesel is ~₹90–100/L in India, i.e. ~₹22.50–30/kWh on fuel alone,
+before capex/maintenance). At default capacities: total demand ≈42,400 MWh/year, of which
+renewable+battery covers ≈45% (≈19,100 MWh) — a full all-diesel baseline would cost
+≈₹76 Cr/year, of which ≈₹37.5 Cr/year is what renewable+battery actually avoids (the
+`cost_saved_rs` figure the dashboard shows). Both are believable order-of-magnitude figures
+for real diesel economics at this scale, not inflated by the rescale — verified directly
+against `run_simulation()`'s output rather than estimated, after an earlier draft of this
+note had the baseline and avoided-cost figures backwards.
+
 ## Seasonal demand curve — two-cosine cancellation bug (Phase 1)
 
 First version of `generate_demand()`'s seasonal factor summed two independently-phased

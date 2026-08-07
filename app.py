@@ -35,6 +35,18 @@ if not MODEL_PATH.exists():
     st.stop()
 
 
+def fmt_rs(amount: float) -> str:
+    """Indian Lakh/Crore formatting — 'Rs 4,243,660,709' is not something a human reads at
+    a glance; 'Rs 4.24 Crore' is. 1 Crore = 1,00,00,000; 1 Lakh = 1,00,000."""
+    sign = "-" if amount < 0 else ""
+    amount = abs(amount)
+    if amount >= 1_00_00_000:
+        return f"{sign}Rs {amount / 1_00_00_000:,.2f} Cr"
+    if amount >= 1_00_000:
+        return f"{sign}Rs {amount / 1_00_000:,.2f} L"
+    return f"{sign}Rs {amount:,.0f}"
+
+
 @st.cache_data(show_spinner=False)
 def cached_run(solar, wind, batt_mwh, batt_mw, mode):
     return run_simulation(solar, wind, batt_mwh, batt_mw, mode=mode)
@@ -50,22 +62,37 @@ PEAK_WINDOW_LABEL = f"{min(PEAK_HOURS)}:00–{max(PEAK_HOURS) + 1}:00"
 
 st.title("⚡ Renewable Energy Grid Simulator")
 st.caption(
-    "AI-based demand forecasting for smarter renewable grid dispatch — "
-    "SDG 7 (Affordable & Clean Energy) & SDG 13 (Climate Action)"
+    "AI-based demand forecasting for smarter renewable grid dispatch on a campus-scale "
+    "microgrid — SDG 7 (Affordable & Clean Energy) & SDG 13 (Climate Action)"
 )
 
 with st.sidebar:
     st.header("Grid capacity")
-    solar_mw = st.slider("Solar capacity (MW)", 0, 150, DEFAULT_SOLAR_MW, step=5)
-    wind_mw = st.slider("Wind capacity (MW)", 0, 100, DEFAULT_WIND_MW, step=5)
-    battery_mwh = st.slider("Battery capacity (MWh)", 0, 500, DEFAULT_BATTERY_MWH, step=10)
-    battery_mw = st.slider("Battery power rating (MW)", 0, 100, DEFAULT_BATTERY_POWER_MW, step=5)
+    solar_mw = st.slider("Solar capacity (MW)", 0.0, 15.0, float(DEFAULT_SOLAR_MW), step=0.5)
+    wind_mw = st.slider("Wind capacity (MW)", 0.0, 10.0, float(DEFAULT_WIND_MW), step=0.5)
+    battery_mwh = st.slider("Battery capacity (MWh)", 0.0, 60.0, float(DEFAULT_BATTERY_MWH), step=2.0)
+    battery_mw = st.slider("Battery power rating (MW)", 0.0, 15.0, float(DEFAULT_BATTERY_POWER_MW), step=0.5)
 
     st.divider()
     st.header("Detailed view")
     detail_mode_label = st.radio("Dispatch strategy to inspect", ["Reactive", "Forecast-Driven"], index=1)
     detail_mode = "reactive" if detail_mode_label == "Reactive" else "forecast_driven"
     week_label = st.selectbox("Sample week", list(SAMPLE_WEEKS.keys()))
+
+    st.divider()
+    with st.expander("ℹ️ How this works"):
+        st.markdown(
+            "- **Data**: 1 synthetic year (8,760 hours) of demand/solar/wind — see `data_gen.py`.\n"
+            "- **Forecast**: a RandomForest model predicts demand 3h ahead, beating a naive "
+            "'same hour yesterday' baseline by 63% lower error — see `train_model.py`.\n"
+            "- **Reactive**: the battery reacts to the current hour only.\n"
+            "- **Forecast-Driven**: the battery holds back charge when the model says a bigger "
+            "peak is still coming, saving it for that peak instead of a smaller shortfall now.\n"
+            "- **Why cost/CO₂ move but renewable % barely does**: shifting *when* the battery "
+            "discharges can't change the *total* energy balance over a year — but it CAN shift "
+            "fossil use away from the 6–10pm peak-tariff window (costlier, dirtier diesel-peaker "
+            "power) toward cheaper, cleaner off-peak hours. Full reasoning in `DECISIONS.md`."
+        )
 
 with st.spinner("Running simulation..."):
     reactive = cached_run(solar_mw, wind_mw, battery_mwh, battery_mw, "reactive")
@@ -89,15 +116,15 @@ with col_r:
     st.markdown("#### 🔁 Reactive")
     st.caption("Battery reacts to the current hour only — no lookahead.")
     st.metric("Renewable utilization", f"{reactive.renewable_pct:.1f}%")
-    st.metric("CO2 avoided / year", f"{reactive.co2_avoided_tons:,.0f} t")
-    st.metric("Cost saved / year", f"Rs {reactive.cost_saved_rs:,.0f}")
+    st.metric("CO2 avoided / year", f"{reactive.co2_avoided_tons:,.1f} t")
+    st.metric("Cost saved / year", fmt_rs(reactive.cost_saved_rs))
     st.metric(f"Fossil use in {PEAK_WINDOW_LABEL} peak", f"{reactive.fossil_peak_mwh:,.0f} MWh")
 with col_f:
     st.markdown("#### 🤖 Forecast-Driven")
     st.caption("Battery uses the Phase 2 AI model's forecast to save charge for the real peak.")
     st.metric("Renewable utilization", f"{forecast_driven.renewable_pct:.1f}%")
-    st.metric("CO2 avoided / year", f"{forecast_driven.co2_avoided_tons:,.0f} t", delta=f"{co2_delta:,.0f} t")
-    st.metric("Cost saved / year", f"Rs {forecast_driven.cost_saved_rs:,.0f}", delta=f"Rs {cost_delta:,.0f}")
+    st.metric("CO2 avoided / year", f"{forecast_driven.co2_avoided_tons:,.1f} t", delta=f"{co2_delta:,.1f} t")
+    st.metric("Cost saved / year", fmt_rs(forecast_driven.cost_saved_rs), delta=fmt_rs(cost_delta))
     st.metric(
         f"Fossil use in {PEAK_WINDOW_LABEL} peak",
         f"{forecast_driven.fossil_peak_mwh:,.0f} MWh",
@@ -105,12 +132,18 @@ with col_f:
         delta_color="inverse",
     )
 
+peak_fossil_reduction_pct = -peak_fossil_delta_pct + 0.0  # "+0.0" avoids a -0.0 display
+# artifact when peak_fossil_delta_pct is exactly 0 (e.g. battery power slider at 0, so both
+# modes are identical) — found live-testing that edge case, where this rendered as "shifting
+# -0.0% of fossil backup", not a real negative value.
+
 st.info(
-    f"With this capacity mix, Forecast-Driven dispatch saves an extra **Rs {cost_delta:,.0f}** and "
-    f"avoids **{co2_delta:,.0f} more tons of CO₂** a year than Reactive dispatch — by shifting "
-    f"**{-peak_fossil_delta_pct:.1f}%** of fossil backup use away from the expensive, high-emission "
+    f"With this capacity mix, Forecast-Driven dispatch saves an extra **{fmt_rs(cost_delta)}** and "
+    f"avoids **{co2_delta:,.1f} more tons of CO₂** a year than Reactive dispatch — by shifting "
+    f"**{peak_fossil_reduction_pct:.1f}%** of fossil backup use away from the expensive, high-emission "
     f"{PEAK_WINDOW_LABEL} peak window. Renewable utilization itself is similar between modes by "
-    f"design (see DECISIONS.md) — the real advantage is *when* fossil backup gets used, not how much."
+    f"design (see ℹ️ *How this works* in the sidebar) — the real advantage is *when* "
+    f"fossil backup gets used, not how much."
 )
 
 st.divider()

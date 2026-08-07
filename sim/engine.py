@@ -71,13 +71,15 @@ PEAK_CO2_MULTIPLIER = 1.3
 HOLD_BACK_FRACTION = 0.15
 PEAK_AHEAD_THRESHOLD = 1.02  # forecast must exceed current demand by >2% to count as "a bigger peak is coming"
 
-# Reasonable default capacities for this synthetic grid (MEAN_DEMAND_MW=60, peak~108 in
-# data_gen.py) — used as the dashboard's initial slider positions. Sized so the battery is a
-# genuinely influential part of the system (see DECISIONS.md) rather than a rounding error.
-DEFAULT_SOLAR_MW = 70
-DEFAULT_WIND_MW = 40
-DEFAULT_BATTERY_MWH = 300
-DEFAULT_BATTERY_POWER_MW = 60
+# Reasonable default capacities for this synthetic grid (MEAN_DEMAND_MW=5, peak~9 in
+# data_gen.py — genuine campus/community microgrid scale) — used as the dashboard's initial
+# slider positions. Sized so the battery is a genuinely influential part of the system (see
+# DECISIONS.md) rather than a rounding error; same solar/wind/battery-to-demand ratios as an
+# earlier 60MW-scale version, just rescaled down to actual microgrid territory.
+DEFAULT_SOLAR_MW = 6
+DEFAULT_WIND_MW = 3.5
+DEFAULT_BATTERY_MWH = 25
+DEFAULT_BATTERY_POWER_MW = 5
 
 FEATURE_COLS_FALLBACK_WARMUP_HOURS = 168  # lag_168h needs a week of history to exist
 
