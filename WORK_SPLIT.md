@@ -3,14 +3,16 @@
 The core build (Phases 0-5) is already done and verified. This divides ownership so each
 person can genuinely explain and defend their half to the guide — not an even split of
 lines of code, an even split of **things you can be asked about and answer confidently**.
-Fill in real names below.
 
-**Member 1 (_____________)** — "Data & Intelligence"
-**Member 2 (_____________)** — "Simulation & Experience"
+**Member 1 — Adwaith S Dev (System ID: 2024418186)** — "Data & Intelligence"
+**Member 2 — Gaurav Rustagi (System ID: 2024519071)** — "Simulation & Experience"
+
+Assigned in the order names were given, not by any tested skill fit — swap the two sections'
+content below (keeping the names as-is) if either of you would rather take the other half.
 
 ---
 
-## Member 1 — Data & Intelligence
+## Member 1 — Adwaith S Dev (2024418186) — Data & Intelligence
 
 **Owns:** `data_gen.py`, `train_model.py`, `data/`, `model/`
 **SRS sections:** FR-DG-1..5 (Data Generation), FR-FM-1..5 (Forecasting Model) — [SRS §3.1.1, §3.1.2]
@@ -37,7 +39,7 @@ You should be able to explain, unprompted:
       irradiance data for one city) and compare — strengthens the "could this scale to real
       data" answer in `DEMO_SCRIPT.md`
 
-## Member 2 — Simulation & Experience
+## Member 2 — Gaurav Rustagi (2024519071) — Simulation & Experience
 
 **Owns:** `sim/engine.py`, `app.py`, `test_engine.py`
 **SRS sections:** FR-SE-1..6 (Simulation Engine), FR-UI-1..7 (Dashboard) — [SRS §3.1.3, §3.1.4]
