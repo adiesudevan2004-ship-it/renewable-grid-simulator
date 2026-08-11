@@ -2,7 +2,10 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-data/*.csv
-model/*.pkl
 .streamlit/secrets.toml
 *.log
+
+# data/*.csv and model/*.pkl were gitignored (regenerable artifacts) for solo local dev.
+# Now tracked deliberately: Streamlit Community Cloud only runs `pip install` + `streamlit
+# run app.py` on deploy, it doesn't run data_gen.py/train_model.py for you — so these need
+# to actually be in the repo for the deployed app to work at all, not just regenerable.
